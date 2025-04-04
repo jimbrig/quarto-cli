@@ -59,7 +59,7 @@ function render_typst_brand_yaml()
   return {
     Pandoc = function(pandoc0)
       local brand = param('brand')
-      local brandMode = 'light'
+      local brandMode = param('brand-mode') or 'light'
       brand = brand and brand[brandMode]
       if brand and brand.processedData then
         -- color
@@ -82,7 +82,16 @@ function render_typst_brand_yaml()
           end
           local themebk = {}
           for name, _ in pairs(brandColor) do
-            themebk[name] = 'brand-color.' .. name .. '.lighten(85%)'
+            if brandColor.background then
+              local brandPercent = 15
+              if brandMode == 'dark' then
+                brandPercent = 50
+              end
+              local bkPercent = 100 - brandPercent
+              themebk[name] = 'color.mix((brand-color.' .. name .. ', ' .. brandPercent .. '%), (brand-color.background, ' .. bkPercent .. '%))'
+            else
+              themebk[name] = 'brand-color.' .. name .. '.lighten(85%)'
+            end
           end
           local decl = '#let brand-color-background = ' .. to_typst_dict_indent(themebk)
           quarto.doc.include_text('in-header', decl)
@@ -300,7 +309,7 @@ function render_typst_brand_yaml()
       end
     end,
     Meta = function(meta)
-      local brandMode = 'light'
+      local brandMode = param('brand-mode') or 'light'
       -- it can contain the path but we want to store an object here
       if not meta.brand or pandoc.utils.type(meta.brand) == 'Inlines' then
         meta.brand = {}

@@ -15623,6 +15623,22 @@ try {
             description: "The paper size for the document.\n"
           },
           {
+            name: "brand-mode",
+            schema: {
+              enum: [
+                "light",
+                "dark"
+              ]
+            },
+            default: "light",
+            tags: {
+              formats: [
+                "typst"
+              ]
+            },
+            description: "The brand mode to use for rendering the Typst document, `light` or `dark`.\n"
+          },
+          {
             name: "layout",
             schema: {
               maybeArrayOf: "string"
@@ -16853,6 +16869,20 @@ try {
               ]
             },
             description: "Enables smooth scrolling within the page."
+          },
+          {
+            name: "respect-user-color-scheme",
+            schema: "boolean",
+            default: false,
+            tags: {
+              formats: [
+                "$html-doc"
+              ]
+            },
+            description: {
+              short: "Whether the `prefers-color-scheme` media query controls dark mode.",
+              long: "Whether to use the `prefers-color-scheme` media query to determine whether to show\nthe user a dark or light page. Otherwise the author preference (order of `light`\nand `dark` in `theme` or `brand`) determines what is shown to the user at first visit.\n"
+            }
           },
           {
             name: "html-math-method",
@@ -20936,6 +20966,7 @@ try {
           "Number of matches to display (defaults to 20)",
           "Matches after which to collapse additional results",
           "Provide button for copying search link",
+          "When false, do not merge navbar crumbs into the crumbs in\n<code>search.json</code>.",
           "One or more keys that will act as a shortcut to launch search (single\ncharacters)",
           "One or more keys that will act as a shortcut to launch search (single\ncharacters)",
           "Whether to include search result parents when displaying items in\nsearch results (when possible).",
@@ -21096,6 +21127,7 @@ try {
           "Number of matches to display (defaults to 20)",
           "Matches after which to collapse additional results",
           "Provide button for copying search link",
+          "When false, do not merge navbar crumbs into the crumbs in\n<code>search.json</code>.",
           "One or more keys that will act as a shortcut to launch search (single\ncharacters)",
           "One or more keys that will act as a shortcut to launch search (single\ncharacters)",
           "Whether to include search result parents when displaying items in\nsearch results (when possible).",
@@ -22734,6 +22766,7 @@ try {
           },
           "Control the <code>\\pagestyle{}</code> for the document.",
           "The paper size for the document.",
+          "The brand mode to use for rendering the Typst document,\n<code>light</code> or <code>dark</code>.",
           {
             short: "The options for margins and text layout for this document.",
             long: 'The options for margins and text layout for this document.\nSee <a href="https://wiki.contextgarden.net/Layout">ConTeXt\nLayout</a> for additional information.'
@@ -23420,6 +23453,7 @@ try {
           "Number of matches to display (defaults to 20)",
           "Matches after which to collapse additional results",
           "Provide button for copying search link",
+          "When false, do not merge navbar crumbs into the crumbs in\n<code>search.json</code>.",
           "One or more keys that will act as a shortcut to launch search (single\ncharacters)",
           "One or more keys that will act as a shortcut to launch search (single\ncharacters)",
           "Whether to include search result parents when displaying items in\nsearch results (when possible).",
@@ -23773,6 +23807,7 @@ try {
           "Number of matches to display (defaults to 20)",
           "Matches after which to collapse additional results",
           "Provide button for copying search link",
+          "When false, do not merge navbar crumbs into the crumbs in\n<code>search.json</code>.",
           "One or more keys that will act as a shortcut to launch search (single\ncharacters)",
           "One or more keys that will act as a shortcut to launch search (single\ncharacters)",
           "Whether to include search result parents when displaying items in\nsearch results (when possible).",
@@ -24023,7 +24058,11 @@ try {
           "Disambiguating year suffix in author-date styles (e.g.&nbsp;\u201Ca\u201D in \u201CDoe,\n1999a\u201D).",
           "Manuscript configuration",
           "internal-schema-hack",
-          "List execution engines you want to give priority when determining\nwhich engine should render a notebook. If two engines have support for a\nnotebook, the one listed earlier will be chosen. Quarto\u2019s default order\nis \u2018knitr\u2019, \u2018jupyter\u2019, \u2018markdown\u2019, \u2018julia\u2019."
+          "List execution engines you want to give priority when determining\nwhich engine should render a notebook. If two engines have support for a\nnotebook, the one listed earlier will be chosen. Quarto\u2019s default order\nis \u2018knitr\u2019, \u2018jupyter\u2019, \u2018markdown\u2019, \u2018julia\u2019.",
+          {
+            short: "Whether the <code>prefers-color-scheme</code> media query controls\ndark mode.",
+            long: "Whether to use the <code>prefers-color-scheme</code> media query to\ndetermine whether to show the user a dark or light page. Otherwise the\nauthor preference (order of <code>light</code> and <code>dark</code> in\n<code>theme</code> or <code>brand</code>) determines what is shown to\nthe user at first visit."
+          }
         ],
         "schema/external-schemas.yml": [
           {
@@ -24252,12 +24291,12 @@ try {
           mermaid: "%%"
         },
         "handlers/mermaid/schema.yml": {
-          _internalId: 194252,
+          _internalId: 194479,
           type: "object",
           description: "be an object",
           properties: {
             "mermaid-format": {
-              _internalId: 194244,
+              _internalId: 194471,
               type: "enum",
               enum: [
                 "png",
@@ -24273,7 +24312,7 @@ try {
               exhaustiveCompletions: true
             },
             theme: {
-              _internalId: 194251,
+              _internalId: 194478,
               type: "anyOf",
               anyOf: [
                 {
@@ -31416,6 +31455,51 @@ ${tidyverseInfo(
   }
 
   // ../yaml-validation/validator.ts
+  function createNiceError(obj) {
+    const {
+      violatingObject,
+      source,
+      message
+    } = obj;
+    const locF = mappedIndexToLineCol(source);
+    let location;
+    try {
+      location = {
+        start: locF(violatingObject.start),
+        end: locF(violatingObject.end)
+      };
+    } catch (_e) {
+      location = {
+        start: { line: 0, column: 0 },
+        end: { line: 0, column: 0 }
+      };
+    }
+    const mapResult = source.map(violatingObject.start);
+    const fileName = mapResult ? mapResult.originalString.fileName : void 0;
+    return {
+      heading: message,
+      error: [],
+      info: {},
+      fileName,
+      location,
+      sourceContext: createSourceContext(violatingObject.source, {
+        start: violatingObject.start,
+        end: violatingObject.end
+      })
+    };
+  }
+  var NoExprTag = class extends Error {
+    constructor(violatingObject, source) {
+      super(`Unexpected !expr tag`);
+      this.name = "NoExprTag";
+      this.niceError = createNiceError({
+        violatingObject,
+        source,
+        message: "!expr tags are not allowed in Quarto outside of knitr code cells."
+      });
+    }
+    niceError;
+  };
   var ValidationContext = class {
     instancePath;
     root;
@@ -31806,6 +31890,9 @@ ${tidyverseInfo(
             return value.components[i];
           }
         }
+      }
+      if (value.result && typeof value.result === "object" && !Array.isArray(value.result) && value.result.tag === "!expr") {
+        throw new NoExprTag(value, value.source);
       }
       throw new InternalError(`Couldn't locate key ${key}`);
     };
